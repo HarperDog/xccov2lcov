@@ -15,11 +15,13 @@ public
 struct XCCovContext {
     public let includedTargets: [String]
     public let trimPath: String
+    public let excludedPaths: [String]
     public let mode: Mode
 
-    public init(includedTargets: [String] = [], trimPath: String = "", mode: Mode = .simple) {
+    public init(includedTargets: [String] = [], trimPath: String = "", excludedPaths: [String] = [], mode: Mode = .simple) {
         self.includedTargets = includedTargets
         self.trimPath = trimPath
+        self.excludedPaths = excludedPaths
         self.mode = mode
     }
 }
@@ -40,7 +42,13 @@ extension XCCovData {
 
 extension XCCovTarget {
     public func lcov(context: XCCovContext) -> String {
-        files.map { $0.lcov(context: context) }.joined(separator: "\n")
+        files
+            .filter({ file in
+                !context.excludedPaths.contains(where: { excludedPath in
+                    file.path.hasPrefix(excludedPath)
+                })
+            })
+            .map { $0.lcov(context: context) }.joined(separator: "\n")
     }
 }
 

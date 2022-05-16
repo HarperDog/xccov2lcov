@@ -18,13 +18,14 @@ command(
     Argument<String>("inputFilename", description: "Input filename (output of `xccov view --report --json file.xcresult`)"),
     Option("trim-path", default: "", description: "Path to trim from start of paths in input file"),
     VariadicOption<String>("include-targets", default: [], description: "Targets to include in output (default: all targets)"),
-    VariadicOption<String>("exclude-paths", default: [], description: "File and folder paths to exclude from output (default: none)"),
+    VariadicOption<String>("file-paths", description: "Path prefixes that files must be in (default: all paths)"),
     Option<String>("mode", default: "simple", description: "Output mode: 'simple' includes only DA records, 'full' includes 'FN*' records")
 ) {
-    inputFilename, trimPath, includeTargets, excludePaths, mode in
+    inputFilename, trimPath, includeTargets, filePaths, mode in
 
     guard FileManager().isReadableFile(atPath: inputFilename) else { throw CmdError(description: "Cannot read input file: \(inputFilename)") }
-    let context = XCCovContext(includedTargets: includeTargets, trimPath: trimPath, excludedPaths: excludePaths, mode: Mode(rawValue: mode)!)
+    let limitToFilePaths: [String]? = (filePaths.isEmpty ? nil : filePaths)
+    let context = XCCovContext(includedTargets: includeTargets, trimPath: trimPath, limitToFilePaths: limitToFilePaths, mode: Mode(rawValue: mode)!)
     let data = try Data(contentsOf: URL(fileURLWithPath: inputFilename))
     let xccovData = try JSONDecoder().decode(XCCovData.self, from: data)
     print(xccovData.lcov(context: context))

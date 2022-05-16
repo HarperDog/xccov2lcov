@@ -15,13 +15,13 @@ public
 struct XCCovContext {
     public let includedTargets: [String]
     public let trimPath: String
-    public let excludedPaths: [String]
+    public let limitToFilePaths: [String]?
     public let mode: Mode
 
-    public init(includedTargets: [String] = [], trimPath: String = "", excludedPaths: [String] = [], mode: Mode = .simple) {
+    public init(includedTargets: [String] = [], trimPath: String = "", limitToFilePaths: [String]? = nil, mode: Mode = .simple) {
         self.includedTargets = includedTargets
         self.trimPath = trimPath
-        self.excludedPaths = excludedPaths
+        self.limitToFilePaths = limitToFilePaths
         self.mode = mode
     }
 }
@@ -44,9 +44,13 @@ extension XCCovTarget {
     public func lcov(context: XCCovContext) -> String {
         files
             .filter({ file in
-                !context.excludedPaths.contains(where: { excludedPath in
-                    file.path.hasPrefix(excludedPath)
-                })
+                if let limitToFilePaths = context.limitToFilePaths {
+                    return limitToFilePaths.contains(where: { excludedPath in
+                        file.path.hasPrefix(excludedPath)
+                    })
+                } else {
+                    return true
+                }
             })
             .map { $0.lcov(context: context) }.joined(separator: "\n")
     }
